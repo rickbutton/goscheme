@@ -2,6 +2,8 @@ package scheme
 
 import (
   "strconv"
+  "fmt"
+  "errors"
 )
 
 var (
@@ -12,6 +14,7 @@ type Sexpr interface {
   String() string
 }
 
+var symbolCache map[string]*Symbol = make(map[string]*Symbol)
 type Symbol struct {
   str string
 }
@@ -19,7 +22,11 @@ func (s *Symbol) String() string {
   return s.str
 }
 func SymbolFromString(str string) *Symbol {
-  return &Symbol{str}
+  _, ok := symbolCache[str]
+  if !ok {
+    symbolCache[str] = &Symbol{str}
+  }
+  return symbolCache[str]
 }
 
 type Number struct {
@@ -56,15 +63,15 @@ type Scope struct {
   data map[*Symbol]Sexpr
   parent *Scope
 }
-func (s *Scope) Lookup(sym *Symbol) Sexpr {
+func (s *Scope) Lookup(sym *Symbol) (Sexpr, error) {
   v, ok := s.data[sym]
   if ok {
-    return v
+    return v, nil
   }
   if s.parent != nil {
     return s.parent.Lookup(sym)
   }
-  panic("undefined symbol")
+  return nil, errors.New(fmt.Sprintf("undefined symbol %s", sym))
 }
 func NewScope(parent *Scope) *Scope {
   s := new(Scope)
@@ -73,11 +80,31 @@ func NewScope(parent *Scope) *Scope {
   return s
 }
 
-type Function func(*Scope, []Sexpr) Sexpr
+func NewGlobalScope() *Scope {
+  s := NewScope(nil)
+  s.data = GlobalData()
+  return s
+}
+
+type proc func(*Scope, []Sexpr) (Sexpr, error)
+type Function struct {
+  p proc
+  name string
+}
 func (f *Function) String() string {
-  return "func"
+  return f.name
 }
-type Primitive func(*Scope, []Sexpr) Sexpr
+func (f *Function) Procedure() proc {
+  return f.p
+}
+type Primitive struct {
+  p proc
+  name string
+}
+func (p *Primitive) Procedure() proc {
+  return p.p
+}
 func (p *Primitive) String() string {
-  return "primitive"
+  return p.name
 }
+

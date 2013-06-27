@@ -18,11 +18,16 @@ func repl() {
   in := os.Stdin
   r := bufio.NewReader(in)
   _, c := lexer.Lex(r)
-  global :=  scheme.NewScope(nil)
+  global :=  scheme.NewGlobalScope()
+  fmt.Printf("%v\n", global)
   for {
     fmt.Printf("->")
     expr, _ := parser.Parse(c)
-    e := eval.Eval(global, expr)
-    fmt.Printf("=>%s\n", e)
+    e, err := eval.Eval(global, expr)
+    if err != nil {
+      fmt.Printf("%s\n", err)
+    } else {
+      fmt.Printf("=>%s\n", e)
+    }
   }
 }

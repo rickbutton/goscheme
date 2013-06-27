@@ -2,6 +2,8 @@ package parser
 
 import (
   "strconv"
+  "fmt"
+  "errors"
   "github.com/rickbutton/goscheme/lexer"
   "github.com/rickbutton/goscheme/scheme"
 )
@@ -18,42 +20,48 @@ func Parse(ch chan lexer.Token) (scheme.Sexpr, error) {
 
 func parse(ch chan lexer.Token) (scheme.Sexpr, error) {
   tok := <-ch
-  return parseNext(ch, tok), nil
+  return parseNext(ch, tok)
 }
 
-func parseNext(ch chan lexer.Token, tok lexer.Token) scheme.Sexpr {
+func parseNext(ch chan lexer.Token, tok lexer.Token) (scheme.Sexpr, error) {
   switch tok {
   case _LPAREN:
     return parseCons(ch)
   case _RPAREN:
-    panic("Unmatched )")
+    return nil, parseError("unmatched )")
   case _PROTECT:
     s, err := parse(ch)
     if err != nil {
-      panic(err)
+      return nil, err
     }
-    return &scheme.Cons{scheme.SymbolFromString("quote"), &scheme.Cons{s, nil}}
+    return &scheme.Cons{scheme.SymbolFromString("quote"), &scheme.Cons{s, nil}}, nil
   }
-  return parseAtom(tok)
+  return parseAtom(tok), nil
 }
 
-func parseCons(ch chan lexer.Token) scheme.Sexpr {
+func parseCons(ch chan lexer.Token) (scheme.Sexpr, error) {
   tok := <-ch
   if tok == _RPAREN {
-    return scheme.Nil
+    return scheme.Nil, nil
   }
   if tok == lexer.Token(".") {
     tok := <-ch
-    ret := parseNext(ch, tok)
+    ret, err := parseNext(ch, tok)
+    if err != nil {
+      return nil, err
+    }
     tok = <-ch
     if tok != _RPAREN {
-      panic("Expected )")
+      return nil, parseError("expected (")
     }
-    return ret
+    return ret, nil
   }
-  car := parseNext(ch, tok)
-  cdr := parseCons(ch)
-  return &scheme.Cons{car, cdr}
+  car, err := parseNext(ch, tok)
+  if err != nil {
+    return nil ,err
+  }
+  cdr, err := parseCons(ch)
+  return &scheme.Cons{car, cdr}, err
 }
 
 func parseAtom(tok lexer.Token) scheme.Sexpr {
@@ -67,4 +75,8 @@ func parseAtom(tok lexer.Token) scheme.Sexpr {
     e = scheme.NumberFromInt(n)
   }
   return e
+}
+
+func parseError(str string) error {
+  return errors.New(fmt.Sprintf("Parse error: %s", str))
 }
