@@ -30,10 +30,10 @@ func SymbolFromString(str string) *Symbol {
 }
 
 type Number struct {
-  n int64
+  Val int64
 }
 func (n *Number) String() string {
-  return strconv.FormatInt(n.n, 10)
+  return strconv.FormatInt(n.Val, 10)
 }
 func NumberFromInt(n int64) *Number {
   return &Number{n}
@@ -73,6 +73,20 @@ func (s *Scope) Lookup(sym *Symbol) (Sexpr, error) {
   }
   return nil, errors.New(fmt.Sprintf("undefined symbol %s", sym))
 }
+func (s *Scope) isDefinedHere(sym *Symbol) bool {
+  _, ok := s.data[sym]
+  return ok
+}
+func (s *Scope) Define(sym *Symbol, val Sexpr) {
+    s.data[sym] = val
+}
+func (s *Scope) DefineHigh(sym *Symbol, val Sexpr) {
+  if s.parent == nil || s.isDefinedHere(sym) {
+    s.Define(sym, val)
+  } else {
+    s.parent.DefineHigh(sym, val)
+  }
+}
 func NewScope(parent *Scope) *Scope {
   s := new(Scope)
   s.data = make(map[*Symbol]Sexpr)
@@ -80,29 +94,35 @@ func NewScope(parent *Scope) *Scope {
   return s
 }
 
-func NewGlobalScope() *Scope {
+func NewGlobalWithData(data map[*Symbol]Sexpr) *Scope {
   s := NewScope(nil)
-  s.data = GlobalData()
+  s.data = data
   return s
 }
 
-type proc func(*Scope, []Sexpr) (Sexpr, error)
+type Proc func(*Scope, []Sexpr) (Sexpr, error)
 type Function struct {
-  p proc
+  p Proc
   name string
 }
 func (f *Function) String() string {
   return f.name
 }
-func (f *Function) Procedure() proc {
+func (f *Function) Procedure() Proc {
   return f.p
 }
+func CreateFunction(p Proc, name string) *Function {
+  return &Function{p, name}
+}
 type Primitive struct {
-  p proc
+  p Proc
   name string
 }
-func (p *Primitive) Procedure() proc {
+func (p *Primitive) Procedure() Proc {
   return p.p
+}
+func CreatePrim(p Proc, name string) *Primitive {
+  return &Primitive{p, name}
 }
 func (p *Primitive) String() string {
   return p.name

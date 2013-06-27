@@ -34,7 +34,7 @@ func parseNext(ch chan lexer.Token, tok lexer.Token) (scheme.Sexpr, error) {
     if err != nil {
       return nil, err
     }
-    return &scheme.Cons{scheme.SymbolFromString("quote"), &scheme.Cons{s, nil}}, nil
+    return &scheme.Cons{scheme.SymbolFromString("quote"), &scheme.Cons{s, scheme.Nil}}, nil
   }
   return parseAtom(tok), nil
 }
