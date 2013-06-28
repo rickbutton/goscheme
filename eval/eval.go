@@ -19,7 +19,7 @@ func Eval(sc *scheme.Scope, e scheme.Sexpr) (scheme.Sexpr, error) {
       return nil, evalError("Attempted application on non-function")
     }
     cdr := cons.Cdr
-    args, err := flatten(cdr)
+    args, err := scheme.Flatten(cdr)
     if err != nil {
       return nil, err
     }
@@ -40,27 +40,7 @@ func Eval(sc *scheme.Scope, e scheme.Sexpr) (scheme.Sexpr, error) {
   return e, nil
 }
 
-func flatten(s scheme.Sexpr) ([]scheme.Sexpr, error) {
-	_, ok := s.(*scheme.Cons)
-  ss := make([]scheme.Sexpr, 0)
-	for ok {
-    ss = append(ss, s.(*scheme.Cons).Car)
-		s = s.(*scheme.Cons).Cdr
-		_, ok = s.(*scheme.Cons)
-	}
-	if s != scheme.Nil {
-    return nil, evalError("list isn't flat")
-	}
-	return ss, nil
-}
 
-func unflatten(s []scheme.Sexpr) scheme.Sexpr {
-  var c scheme.Sexpr = scheme.Nil
-  for i := len(s) - 1; i >= 0; i-- {
-    c = &scheme.Cons{s[i], c}
-  }
-  return c
-}
 
 func isFunction(e scheme.Sexpr) bool {
   _, ok := e.(*scheme.Function)

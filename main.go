@@ -8,6 +8,7 @@ import (
   "github.com/rickbutton/goscheme/lexer"
   "github.com/rickbutton/goscheme/parser"
   "github.com/rickbutton/goscheme/eval"
+  "github.com/rickbutton/goscheme/lib"
 )
 
 func main() {
@@ -23,9 +24,12 @@ func main() {
   }
   r := bufio.NewReader(fi)
   _, c := lexer.Lex(r)
-  data := eval.GlobalData()
-  global := scheme.NewGlobalWithData(data)
-  expr, _ := parser.Parse(c)
+  global := scheme.NewScope(nil)
+  lib.LoadLibrary(global, "rnrs", "base")
+  expr, err := parser.Parse(c)
+  if err != nil {
+    fmt.Printf("%s\n", err.Error())
+  }
   _, err = eval.Eval(global, expr)
   if err != nil {
     fmt.Printf("%s\n", err.Error())
@@ -35,22 +39,4 @@ func main() {
 func usage() {
   fmt.Printf("usage: %s [file.scm]\n", os.Args[0])
   os.Exit(2)
-}
-
-func repl() {
-  in := os.Stdin
-  r := bufio.NewReader(in)
-  _, c := lexer.Lex(r)
-  data := eval.GlobalData()
-  global :=  scheme.NewGlobalWithData(data)
-  for {
-    fmt.Printf("->")
-    expr, _ := parser.Parse(c)
-    e, err := eval.Eval(global, expr)
-    if err != nil {
-      fmt.Printf("%s\n", err)
-    } else {
-      fmt.Printf("=>%s\n", e)
-    }
-  }
 }

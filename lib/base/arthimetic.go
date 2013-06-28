@@ -1,4 +1,4 @@
-package eval
+package base
 
 import (
   "github.com/rickbutton/goscheme/scheme"
@@ -6,14 +6,14 @@ import (
 
 func plus(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
   if len(args) < 2 {
-    return nil, procError("+ requires at least 2 arguments")
+    return nil, scheme.ProcError("+ requires at least 2 arguments")
   }
   var sum int64 = 0
   for _, a := range args {
-    if IsNumber(a) {
+    if scheme.IsNumber(a) {
       sum += a.(*scheme.Number).Val
     } else {
-      return nil, procError("+ requires all number arguments")
+      return nil, scheme.ProcError("+ requires all number arguments")
     }
   }
   return scheme.NumberFromInt(sum), nil
@@ -21,14 +21,14 @@ func plus(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
 
 func mul(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
   if len(args) < 2 {
-    return nil, procError("* requires at least 2 arguments")
+    return nil, scheme.ProcError("* requires at least 2 arguments")
   }
   var product int64 = 1
   for _, a := range args {
-    if IsNumber(a) {
+    if scheme.IsNumber(a) {
       product *= a.(*scheme.Number).Val
     } else {
-      return nil, procError("* requires all number arguments")
+      return nil, scheme.ProcError("* requires all number arguments")
     }
   }
   return scheme.NumberFromInt(product), nil
@@ -36,10 +36,10 @@ func mul(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
 
 func sub(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
   if len(args) != 2 {
-    return nil, procError("- requires exactly 2 arguments")
+    return nil, scheme.ProcError("- requires exactly 2 arguments")
   }
-  if !IsNumber(args[0]) || !IsNumber(args[1]) {
-    return nil, procError("- requires all number arguments")
+  if !scheme.IsNumber(args[0]) || !scheme.IsNumber(args[1]) {
+    return nil, scheme.ProcError("- requires all number arguments")
   }
   left := args[0].(*scheme.Number).Val
   right := args[1].(*scheme.Number).Val
@@ -48,10 +48,10 @@ func sub(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
 
 func div(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
   if len(args) != 2 {
-    return nil, procError("/ requires exactly 2 arguments")
+    return nil, scheme.ProcError("/ requires exactly 2 arguments")
   }
-  if !IsNumber(args[0]) || !IsNumber(args[1]) {
-    return nil, procError("/ requires all number arguments")
+  if !scheme.IsNumber(args[0]) || !scheme.IsNumber(args[1]) {
+    return nil, scheme.ProcError("/ requires all number arguments")
   }
   left := args[0].(*scheme.Number).Val
   right := args[1].(*scheme.Number).Val

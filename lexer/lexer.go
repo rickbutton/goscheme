@@ -4,6 +4,8 @@ import (
   "io"
   "fmt"
   "strings"
+  "strconv"
+  "unicode"
   "errors"
   "bytes"
 )
@@ -19,23 +21,40 @@ type Lexer struct {
   r io.RuneScanner
   tokens chan Token
   tmp *bytes.Buffer
+  escape *bytes.Buffer
 }
 type lexState func (l *Lexer) (lexState, error)
 
 func newLexer(r io.RuneScanner) *Lexer {
-  return &Lexer{r, make(chan Token), new(bytes.Buffer)}
+  return &Lexer{r, make(chan Token), new(bytes.Buffer), new(bytes.Buffer)}
 }
 func (l *Lexer) run() {
   for state := readyState; state != nil; {
 
-    newState, _ := state(l)
+    newState, err := state(l)
+    if err != nil {
+      l.tokens <- Token{err.Error(), ErrorToken}
+    }
     state = newState
 
   }
   close(l.tokens)
 }
 
-type Token string
+type Token struct {
+  Val string
+  T TokenType
+}
+
+type TokenType int
+const (
+  SymbolToken TokenType = iota
+  ParensToken
+  StringToken
+  BooleanToken
+  NumberToken
+  ErrorToken
+)
 
 func Lex(r io.RuneScanner) (*Lexer, chan Token) {
   l := newLexer(r)
@@ -55,7 +74,7 @@ func readyState(l *Lexer) (lexState, error) {
   }
   if strings.ContainsRune(PARENS, ch) {
     //Just emit the parens character
-    l.tokens <- Token(ch)
+    l.tokens <- Token{string(ch), ParensToken}
   } else if strings.ContainsRune(WS, ch) {
     //ignore whitespace
   } else if ch == ';' {
@@ -64,7 +83,7 @@ func readyState(l *Lexer) (lexState, error) {
   } else if ch == '"' {
     return stringState, nil
   } else if ch == PROTECT {
-    l.tokens <- Token(ch)
+    l.tokens <- Token{string(ch), SymbolToken}
   } else {
     l.tmp.WriteRune(ch)
     return readingState, nil
@@ -75,7 +94,7 @@ func readyState(l *Lexer) (lexState, error) {
 func readingState(l *Lexer) (lexState, error) {
   ch, err := l.nextRune()
   if err == io.EOF {
-    tok := Token(l.tmp.String())
+    tok := Token{l.tmp.String(), SymbolToken}
     l.tmp.Reset()
     l.r.UnreadRune()
     l.tokens <- tok
@@ -85,7 +104,7 @@ func readingState(l *Lexer) (lexState, error) {
   }
   if strings.ContainsRune(SPLIT, ch) {
     //current token ened
-    tok := Token(l.tmp.String())
+    tok := Token{l.tmp.String(), SymbolToken}
     l.tmp.Reset()
     l.r.UnreadRune()
     l.tokens <- tok
@@ -94,6 +113,34 @@ func readingState(l *Lexer) (lexState, error) {
     l.tmp.WriteRune(ch)
   }
   return readingState, nil
+}
+
+func hashState(l *Lexer) (lexState, error) {
+  ch, err := l.nextRune()
+  if err != nil {
+    return nil, err
+  }
+  switch ch {
+  case '\\':
+    return charState, nil
+  case 't':
+    l.tokens <- Token{"#t", BooleanToken}
+    return readyState, nil
+  case 'f':
+    l.tokens <- Token{"#f", BooleanToken}
+    return readyState, nil
+  case '(':
+    panic("vectors not implemented yet asshole")
+  }
+  return nil, lexError(fmt.Sprintf("invalid hash syntax #%c", ch))
+}
+
+func charState(l *Lexer) (lexState, error) {
+  _, err := l.nextRune()
+  if err != nil {
+    return nil, err
+  }
+  panic("characters are not yet implemented")
 }
 
 func stringState(l *Lexer) (lexState, error) {
@@ -105,7 +152,7 @@ func stringState(l *Lexer) (lexState, error) {
     return escapeState, nil
   } else {
     if ch == '"' {
-      tok := Token("\"" + l.tmp.String() + "\"")
+      tok := Token{"\"" + l.tmp.String() + "\"", StringToken}
       l.tmp.Reset()
       l.tokens <- tok
       return readyState, nil
@@ -123,14 +170,48 @@ func escapeState(l *Lexer) (lexState, error) {
     return nil, err
   }
   switch ch {
-  case 'n':
-    l.tmp.WriteRune('\n')
+  case 'a':
+    l.tmp.WriteRune('\a')
+  case 'b':
+    l.tmp.WriteRune('\b')
   case 't':
     l.tmp.WriteRune('\t')
+  case 'n':
+    l.tmp.WriteRune('\n')
+  case 'v':
+    l.tmp.WriteRune('\v')
+  case 'f':
+    l.tmp.WriteRune('\f')
+  case 'r':
+    l.tmp.WriteRune('\r')
+  case '"':
+    l.tmp.WriteRune('"')
+  case '\\':
+    l.tmp.WriteRune('\\')
+  case 'x':
+    return hexEscapeState, nil
   default:
     return nil, lexError(fmt.Sprintf("invalid escape %c", ch))
   }
   return stringState, nil
+}
+
+func hexEscapeState(l *Lexer) (lexState, error) {
+  ch, err := l.nextRune()
+  if err != nil {
+    return nil, err
+  }
+  if unicode.IsDigit(ch) {
+    l.escape.WriteRune(ch)
+  } else if ch == ';' {
+    s := l.escape.String()
+    n, _ := strconv.ParseInt(s, 16, 64)
+    l.tmp.WriteRune(rune(n))
+    return stringState, nil
+  } else if !unicode.IsDigit(ch) {
+    return nil, lexError("invalid hex escape")
+  }
+  return hexEscapeState, nil
 }
 
 func commentState(l *Lexer) (lexState, error) {

@@ -1,31 +1,31 @@
-package eval
+package base
 
 import (
   "github.com/rickbutton/goscheme/scheme"
 )
 
-var data map[*scheme.Symbol]scheme.Sexpr = nil
-
-func GlobalData() map[*scheme.Symbol]scheme.Sexpr {
-  if data == nil {
-    data = setupData()
-  }
-  return data
-}
-
-func setupData() map[*scheme.Symbol]scheme.Sexpr {
+func Definitions() map[*scheme.Symbol]scheme.Sexpr {
   d := make(map[*scheme.Symbol]scheme.Sexpr)
 
   addFunction(d, "read", read)
-  addFunction(d, "eval", eval)
+  addFunction(d, "eval", primEval)
   addFunction(d, "print", print)
   addFunction(d, "display", display)
+
+  addFunction(d, "boolean?", booleanCheck)
+  addFunction(d, "pair?", pairCheck)
+  addFunction(d, "symbol?", symbolCheck)
+  addFunction(d, "number?", numberCheck)
+  addFunction(d, "char?", charCheck)
+  addFunction(d, "string?", stringCheck)
+  addFunction(d, "procedure?", procCheck)
+  addFunction(d, "null?", nullCheck)
 
   addFunction(d, "+", plus)
   addFunction(d, "*", mul)
   addFunction(d, "-", sub)
   addFunction(d, "/", div)
-  
+
   addPrim(d, "lambda", lambda)
   addPrim(d, "let", let)
   addPrim(d, "define", define)

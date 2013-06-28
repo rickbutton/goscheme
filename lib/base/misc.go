@@ -1,4 +1,4 @@
-package eval
+package base
 
 import (
   "fmt"
@@ -8,11 +8,12 @@ import (
   "github.com/rickbutton/goscheme/scheme"
   "github.com/rickbutton/goscheme/lexer"
   "github.com/rickbutton/goscheme/parser"
+  "github.com/rickbutton/goscheme/eval"
 )
 
 func read(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
   if len(args) != 0 {
-    return nil, procError("read must have no arguments")
+    return nil, scheme.ProcError("read must have no arguments")
   }
 
   br := bufio.NewReader(os.Stdin)
@@ -27,16 +28,16 @@ func read(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
   return expr, nil
 }
 
-func eval(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
+func primEval(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
   if len(args) != 1 {
-    return nil, procError("eval requires exactly one argument")
+    return nil, scheme.ProcError("eval requires exactly one argument")
   }
-  return Eval(s, args[0])
+  return eval.Eval(s, args[0])
 }
 
 func print(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
   if len(args) != 1 {
-    return nil, procError("print requires exactly one argument")
+    return nil, scheme.ProcError("print requires exactly one argument")
   }
   fmt.Printf("%s\n", args[0])
   return scheme.Nil, nil
@@ -44,7 +45,7 @@ func print(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
 
 func display(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
   if len(args) != 1 {
-    return nil, procError("display requires exactly one argument")
+    return nil, scheme.ProcError("display requires exactly one argument")
   }
   fmt.Printf("%s", args[0])
   return scheme.Nil, nil
