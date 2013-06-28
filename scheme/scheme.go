@@ -8,6 +8,8 @@ import (
 
 var (
   Nil = &nilPrim{}
+  True = &Boolean{true}
+  False = &Boolean{false}
 )
 
 type Sexpr interface {
@@ -39,11 +41,35 @@ func NumberFromInt(n int64) *Number {
   return &Number{n}
 }
 
+type Boolean struct {
+  Val bool
+}
+func (b *Boolean) String() string {
+  if b.Val {
+    return "#t"
+  } else {
+    return "#f"
+  }
+  return "#t"
+}
+func BooleanFromBool(b bool) *Boolean {
+  if b {
+    return True
+  }
+  return False
+}
+func BooleanFromString(str string) *Boolean {
+  if str == "#f" {
+    return False
+  }
+  return True
+}
+
 type String struct {
   str string
 }
 func (s *String) String() string {
-  return "\"" + s.str + "\""
+  return s.str
 }
 func StringFromString(str string) *String {
   return &String{str}
@@ -57,7 +83,7 @@ func (c *Cons) String() string {
 }
 
 type nilPrim struct {}
-func (n *nilPrim) String() string { return "nil" }
+func (n *nilPrim) String() string { return "()" }
 
 type Scope struct {
   data map[*Symbol]Sexpr

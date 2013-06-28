@@ -4,6 +4,30 @@ import (
   "github.com/rickbutton/goscheme/scheme"
 )
 
+func primFor(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
+  if len(args) != 2 {
+    return nil, procError("for requires exactly two arguments")
+  }
+  cond := args[0]
+  expr := args[1]
+  var val scheme.Sexpr = scheme.Nil
+  cv, err := Eval(s, cond)
+  if err != nil {
+    return nil, err
+  }
+  for cv != scheme.Nil && cv != scheme.False {
+    val, err = Eval(s, expr)
+    if err != nil {
+      return nil, err
+    }
+    cv, err = Eval(s, cond)
+    if err != nil {
+      return nil, err
+    }
+  }
+  return val, nil
+}
+
 func lambda(s *scheme.Scope, ss []scheme.Sexpr) (scheme.Sexpr, error) {
   if len(ss) != 2 {
     return nil, procError("lambda requires exactly 2 arguments")
@@ -109,4 +133,16 @@ func quote(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
     return nil, procError("quote requires exactly one argument")
   }
   return args[0], nil
+}
+
+func begin(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
+  var last scheme.Sexpr = scheme.Nil
+  var err error = nil
+  for _, l := range args {
+    last, err = Eval(s, l)
+    if err != nil {
+      return nil, err
+    }
+  }
+  return last, nil
 }

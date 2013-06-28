@@ -69,6 +69,9 @@ func parseAtom(tok lexer.Token) scheme.Sexpr {
   if tok[0] == '"' {
     e = scheme.StringFromString(string(tok[1 : len(tok) - 1]))
   }
+  if tok == "#t" || tok == "#f" {
+    e = scheme.BooleanFromString(string(tok))
+  }
 
   n, err := strconv.ParseInt(string(tok), 10, 64)
   if err == nil {

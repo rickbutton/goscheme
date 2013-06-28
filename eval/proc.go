@@ -16,6 +16,11 @@ func GlobalData() map[*scheme.Symbol]scheme.Sexpr {
 func setupData() map[*scheme.Symbol]scheme.Sexpr {
   d := make(map[*scheme.Symbol]scheme.Sexpr)
 
+  addFunction(d, "read", read)
+  addFunction(d, "eval", eval)
+  addFunction(d, "print", print)
+  addFunction(d, "display", display)
+
   addFunction(d, "+", plus)
   addFunction(d, "*", mul)
   addFunction(d, "-", sub)
@@ -25,6 +30,11 @@ func setupData() map[*scheme.Symbol]scheme.Sexpr {
   addPrim(d, "let", let)
   addPrim(d, "define", define)
   addPrim(d, "quote", quote)
+  addPrim(d, "begin", begin)
+
+  addPrim(d, "for", primFor)
+
+  d[scheme.SymbolFromString("nil")] = scheme.Nil
 
   return d
 }
