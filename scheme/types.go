@@ -74,6 +74,12 @@ func StringFromString(str string) *String {
 type Char struct {
   r rune
 }
+func (s *Char) String() string {
+  return string(s.r)
+}
+func CharFromRune(r rune) *Char {
+  return &Char{r}
+}
 
 type Cons struct {
   Car, Cdr Sexpr

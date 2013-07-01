@@ -2,6 +2,7 @@ package parser
 
 import (
   "strconv"
+  "strings"
   "fmt"
   "errors"
   "github.com/rickbutton/goscheme/lexer"
@@ -84,6 +85,9 @@ func parseAtom(tok lexer.Token) scheme.Sexpr {
   } else if isNumber(tok) {
     n, _ := strconv.ParseInt(tok.Val, 10, 64)
     return scheme.NumberFromInt(n)
+  } else if isChar(tok) {
+    n, _ := strconv.ParseInt(tok.Val[3:], 16, 64)
+    return scheme.CharFromRune(rune(n))
   }
   return scheme.SymbolFromString(tok.Val)
 }
@@ -97,6 +101,17 @@ func isString(tok lexer.Token) bool {
 }
 func isBoolean(tok lexer.Token) bool {
   return tok.Val == "#t" || tok.Val == "#f"
+}
+func isChar(tok lexer.Token) bool {
+  if strings.HasPrefix(tok.Val, "#\\x") {
+    n, err := strconv.ParseInt(tok.Val[3:], 16, 64)
+    if err == nil {
+      return (n >= 0 && n <= 0xD7FF) || (n >= 0xE000 && n <= 0x10FFFF)
+    } else {
+      return false
+    }
+  }
+  return false
 }
 
 func parseError(str string) error {

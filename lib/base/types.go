@@ -60,7 +60,13 @@ func charCheck(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
   if len(args) != 1 {
     return nil, scheme.ProcError("char? requires exactly 1 argument")
   }
-  panic("char is not implemented yet")
+  _, ok := args[0].(*scheme.Char)
+  if ok {
+    return scheme.True, nil
+  } else {
+    return scheme.False, nil
+  }
+  return nil, nil
 }
 
 func stringCheck(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {

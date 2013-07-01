@@ -115,34 +115,6 @@ func readingState(l *Lexer) (lexState, error) {
   return readingState, nil
 }
 
-func hashState(l *Lexer) (lexState, error) {
-  ch, err := l.nextRune()
-  if err != nil {
-    return nil, err
-  }
-  switch ch {
-  case '\\':
-    return charState, nil
-  case 't':
-    l.tokens <- Token{"#t", BooleanToken}
-    return readyState, nil
-  case 'f':
-    l.tokens <- Token{"#f", BooleanToken}
-    return readyState, nil
-  case '(':
-    panic("vectors not implemented yet asshole")
-  }
-  return nil, lexError(fmt.Sprintf("invalid hash syntax #%c", ch))
-}
-
-func charState(l *Lexer) (lexState, error) {
-  _, err := l.nextRune()
-  if err != nil {
-    return nil, err
-  }
-  panic("characters are not yet implemented")
-}
-
 func stringState(l *Lexer) (lexState, error) {
   ch, err := l.nextRune()
   if err != nil {
