@@ -12,4 +12,4 @@ Fully custom, hand-written lexer and parser.
 Future Features
 
 - Goroutine integration
-- Full R6RS standard compatability
+- Full R5RS standard compatability
