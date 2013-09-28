@@ -22,23 +22,35 @@ type Lexer struct {
   tokens chan Token
   tmp *bytes.Buffer
   escape *bytes.Buffer
+  done bool
+}
+func (l *Lexer) Done() bool {
+  return l.done
 }
 type lexState func (l *Lexer) (lexState, error)
 
 func newLexer(r io.RuneScanner) *Lexer {
-  return &Lexer{r, make(chan Token), new(bytes.Buffer), new(bytes.Buffer)}
+  return &Lexer{r, make(chan Token), new(bytes.Buffer), new(bytes.Buffer), false}
 }
 func (l *Lexer) run() {
   for state := readyState; state != nil; {
 
     newState, err := state(l)
-    if err != nil {
+    if err == io.EOF {
+      close(l.tokens)
+      l.done = true
+      return
+    } else if err != nil {
       l.tokens <- Token{err.Error(), ErrorToken}
+      close(l.tokens)
+      l.done = true
+      return
     }
     state = newState
 
   }
   close(l.tokens)
+  l.done = true
 }
 
 type Token struct {

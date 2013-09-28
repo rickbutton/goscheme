@@ -1,12 +1,11 @@
-(begin 
-(define
-  rep
-  (lambda () (begin
-               (display "->")
-               (let ((e (eval (read))))
-                 (begin
-                   (display "=>")
-                   (print e))
-               ))))
-(for 1 (rep))
+(print "Welcome to GoScheme v0.0.1")
+(define rep
+  (lambda ()
+    (display "->") 
+    (let ((e (eval (read))))
+      (display "=>")
+      (print e)
+    )
+  )
 )
+(for 1 (rep))

@@ -23,16 +23,20 @@ func main() {
     os.Exit(2)
   }
   r := bufio.NewReader(fi)
-  _, c := lexer.Lex(r)
-  global := scheme.NewScope(nil)
-  lib.LoadLibrary(global, "rnrs", "base")
-  expr, err := parser.Parse(c)
-  if err != nil {
-    fmt.Printf("%s\n", err.Error())
-  }
-  _, err = eval.Eval(global, expr)
-  if err != nil {
-    fmt.Printf("%s\n", err.Error())
+  l, c := lexer.Lex(r)
+
+  libs := lib.Definitions()
+  global := scheme.NewGlobalWithData(libs)
+
+  for !l.Done() {
+    expr, err := parser.Parse(c)
+    if err != nil {
+      fmt.Printf("%s\n", err.Error())
+    }
+    _, err = eval.Eval(global, expr)
+    if err != nil {
+      fmt.Printf("%s\n", err.Error())
+    }
   }
 }
 

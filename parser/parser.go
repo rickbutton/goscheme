@@ -44,7 +44,10 @@ func parseNext(ch chan lexer.Token, tok lexer.Token) (scheme.Sexpr, error) {
 }
 
 func parseCons(ch chan lexer.Token) (scheme.Sexpr, error) {
-  tok := <-ch
+  tok, ok := <-ch
+  if !ok {
+    return nil, parseError("invalid cons format")
+  }
   if (tok.T == lexer.ErrorToken) {
     return nil, errors.New(tok.Val)
   }
@@ -52,7 +55,10 @@ func parseCons(ch chan lexer.Token) (scheme.Sexpr, error) {
     return scheme.Nil, nil
   }
   if tok.Val == "." {
-    tok := <-ch
+    tok, ok := <-ch
+    if !ok {
+      return nil, parseError("expected )")
+    }
     if (tok.T == lexer.ErrorToken) {
       return nil, errors.New(tok.Val)
     }
@@ -60,12 +66,15 @@ func parseCons(ch chan lexer.Token) (scheme.Sexpr, error) {
     if err != nil {
       return nil, err
     }
-    tok = <-ch
+    tok, ok = <-ch
+    if !ok {
+      return nil, parseError("expected )")
+    }
     if (tok.T == lexer.ErrorToken) {
       return nil, errors.New(tok.Val)
     }
     if tok != _RPAREN {
-      return nil, parseError("expected (")
+      return nil, parseError("expected )")
     }
     return ret, nil
   }

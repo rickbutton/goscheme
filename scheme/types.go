@@ -87,4 +87,8 @@ type Cons struct {
 func (c *Cons) String() string {
   return "(" + c.Car.String() + " . " + c.Cdr.String() + ")"
 }
+func IsCons(s Sexpr) bool {
+  _, ok := s.(*Cons)
+  return ok
+}
 

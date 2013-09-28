@@ -1,4 +1,4 @@
-package base
+package lib
 
 import (
   "github.com/rickbutton/goscheme/scheme"
@@ -30,10 +30,10 @@ func primFor(s *scheme.Scope, args []scheme.Sexpr) (scheme.Sexpr, error) {
 }
 
 func lambda(s *scheme.Scope, ss []scheme.Sexpr) (scheme.Sexpr, error) {
-  if len(ss) != 2 {
-    return nil, scheme.ProcError("lambda requires exactly 2 arguments")
+  if len(ss) < 2 {
+    return nil, scheme.ProcError("lambda at least 2 arguments")
   }
-  expr := ss[1]
+  exprs := ss[1:]
   evalScopeParent := scheme.NewScope(s)
   lArgs := ss[0]
   f := func (callScope *scheme.Scope, ss []scheme.Sexpr) (scheme.Sexpr, error) {
@@ -42,7 +42,6 @@ func lambda(s *scheme.Scope, ss []scheme.Sexpr) (scheme.Sexpr, error) {
     aC, ok :=args.(*scheme.Cons)
     for args != scheme.Nil {
       if len(ss) == 0 {
-        panic("TEST")
         return nil, scheme.ProcError("invalid number of arguments")
       }
       if !ok {
@@ -70,7 +69,10 @@ func lambda(s *scheme.Scope, ss []scheme.Sexpr) (scheme.Sexpr, error) {
       return nil, scheme.ProcError("Invalid number of arguments")
     }
   done:
-    return eval.Eval(evalScope, expr)
+    for _, e := range exprs[0:len(exprs) - 1] {
+      eval.Eval(evalScope, e)
+    }
+    return eval.Eval(evalScope, exprs[len(exprs) - 1])
   }
   return scheme.CreateFunction(f, "lamba"), nil
 }
